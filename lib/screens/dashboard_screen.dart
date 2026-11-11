@@ -856,12 +856,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               size: 20,
             ),
             const SizedBox(width: 8),
-            Text(
-              ssid,
-              style: textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.bold,
+            Flexible(
+              child: Text(
+                ssid,
+                style: textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
-              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
