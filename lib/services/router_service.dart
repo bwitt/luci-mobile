@@ -1,8 +1,14 @@
+import 'dart:async';
+
 import 'package:luci_mobile/models/router.dart' as model;
 import 'package:luci_mobile/services/secure_storage_service.dart';
+import 'package:luci_mobile/utils/logger.dart';
 
 class RouterService {
-  final SecureStorageService _secureStorageService = SecureStorageService();
+  RouterService({SecureStorageService? storage})
+    : _secureStorageService = storage ?? SecureStorageService();
+
+  final SecureStorageService _secureStorageService;
 
   List<model.Router> _routers = [];
   model.Router? _selectedRouter;
@@ -29,7 +35,7 @@ class RouterService {
 
     // Save the selected router ID if we have one
     if (_selectedRouter != null) {
-      await _secureStorageService.saveSelectedRouterId(_selectedRouter!.id);
+      await _saveSelectedRouterId(_selectedRouter!.id);
     }
   }
 
@@ -38,7 +44,7 @@ class RouterService {
     await _secureStorageService.saveRouters(_routers);
     if (_selectedRouter == null) {
       _selectedRouter = router;
-      await _secureStorageService.saveSelectedRouterId(router.id);
+      await _saveSelectedRouterId(router.id);
     }
   }
 
@@ -50,11 +56,11 @@ class RouterService {
     if (wasActive) {
       if (_routers.isNotEmpty) {
         _selectedRouter = _routers.first;
-        await _secureStorageService.saveSelectedRouterId(_selectedRouter!.id);
+        await _saveSelectedRouterId(_selectedRouter!.id);
         return true; // Indicates need to switch to new router
       } else {
         _selectedRouter = null;
-        await _secureStorageService.saveSelectedRouterId(null);
+        await _saveSelectedRouterId(null);
         return false; // No routers available
       }
     }
@@ -89,9 +95,26 @@ class RouterService {
     );
 
     _selectedRouter = found;
-    // Save the selected router ID asynchronously
-    _secureStorageService.saveSelectedRouterId(found.id);
+    unawaited(
+      _saveSelectedRouterId(found.id).catchError(
+        (Object e, StackTrace stack) =>
+            Logger.exception('Could not save the selected router', e, stack),
+      ),
+    );
     return found;
+  }
+
+  /// Writes of the selected id, one after another: as with the sign-out
+  /// flag, two quick switches must not land in the wrong order and restore
+  /// the earlier router on the next launch.
+  Future<void> _selectedIdWrites = Future.value();
+
+  Future<void> _saveSelectedRouterId(String? id) {
+    final write = _selectedIdWrites.then(
+      (_) => _secureStorageService.saveSelectedRouterId(id),
+    );
+    _selectedIdWrites = write.then<void>((_) {}, onError: (_) {});
+    return write;
   }
 
   Future<void> updateRouter(model.Router router) async {
