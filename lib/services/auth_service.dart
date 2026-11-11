@@ -193,10 +193,15 @@ class RealAuthService implements IAuthService {
 
   @override
   Future<void> logout() async {
+    clearSession();
+    await _secureStorageService.clearCredentials();
+  }
+
+  @override
+  void clearSession() {
     _sysauth = null;
     _ipAddress = null;
     _useHttps = false;
-    await _secureStorageService.clearCredentials();
   }
 
   @override

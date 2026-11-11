@@ -77,6 +77,11 @@ class MockAuthService implements IAuthService {
 
   @override
   Future<void> logout() async {
+    clearSession();
+  }
+
+  @override
+  void clearSession() {
     _sysauth = null;
     _isAuthenticated = false;
   }

@@ -37,6 +37,10 @@ abstract class IAuthService {
     BuildContext? context,
   });
   Future<void> logout();
+
+  /// Forgets the in-memory session, keeping saved credentials.
+  void clearSession();
+
   Future<bool> checkRouterAvailability(
     String ipAddress,
     bool useHttps, {

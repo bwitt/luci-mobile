@@ -612,6 +612,9 @@ class AppState extends ChangeNotifier {
     // Clear throughput data and GL.iNet session when switching routers
     _cancelThroughputTimer();
     _glInetService?.clearSession();
+    // The previous router's session must not serve requests made for this
+    // one, which it would if this router's login failed.
+    _authService?.clearSession();
 
     // Determine a safe context before any awaits
     final safeContext = context?.mounted == true
@@ -647,6 +650,8 @@ class AppState extends ChangeNotifier {
     // login() already fetches dashboard data on success; fetching again here
     // would double the RPC burst on every router switch.
     if (!loginSuccess) {
+      // An auth op queued before this switch may have signed in again.
+      _authService?.clearSession();
       _appFailure = const AppFailure(AppFailureKind.login);
     }
     _isLoading = false;
@@ -741,6 +746,15 @@ class AppState extends ChangeNotifier {
               await addRouter(routerWithAlternate);
             } else {
               await updateRouter(routerWithAlternate);
+            }
+            // The session is this router's now, so it must be the selected
+            // one: otherwise its data shows under the previous router.
+            if (_routerService!.selectedRouter?.id != routerWithAlternate.id) {
+              _routerService!.selectRouter(routerWithAlternate.id);
+              _dashboardData = null;
+              await loadDashboardPreferences(expectedToken: token);
+              if (token != _sessionToken) return false;
+              await _pointBackgroundPollAtSelectedRouter();
             }
           }
         } else if (_routerService != null) {
@@ -973,8 +987,13 @@ class AppState extends ChangeNotifier {
       return;
     }
 
-    if (_routerService?.selectedRouter == null ||
-        _authService?.sysauth == null) {
+    final selected = _routerService?.selectedRouter;
+    if (selected == null) return;
+    if (_authService?.sysauth == null) {
+      // Retrying after a failed router switch means signing in to it again.
+      if (_appFailure?.kind == AppFailureKind.login) {
+        await selectRouter(selected.id);
+      }
       return;
     }
 
