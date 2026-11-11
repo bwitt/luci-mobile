@@ -25,8 +25,9 @@ class UrlParser {
       final scheme = uri.scheme.toLowerCase();
       final useHttps = scheme == 'https';
 
-      // Extract host and port
-      String host = uri.host;
+      // Extract host and port. Uri drops an IPv6 literal's brackets, without
+      // which a port appended later reads as part of the address.
+      String host = uri.host.contains(':') ? '[${uri.host}]' : uri.host;
       int? port = uri.hasPort ? uri.port : null;
 
       // If no explicit port, use defaults
