@@ -149,7 +149,10 @@ class WifiEncryption {
       }
     }
 
-    final wep = json['wep'] == true;
+    // rpcd sends WEP as the list of auth algorithms (`["open"]`), and only
+    // for WEP networks.
+    final rawWep = json['wep'];
+    final wep = rawWep == true || rawWep is List;
     final enabled = json['enabled'] == true || wpaVersion > 0 || wep;
 
     // Auth suites: try multiple key names used by different OpenWrt versions
@@ -224,10 +227,10 @@ class WifiEncryption {
   String get openwrtEncryption {
     if (!enabled) return 'none';
     if (wep) return 'wep-open';
-    final hasSAE = authSuites.contains('SAE');
-    final hasPSK = authSuites.contains('PSK');
-    final hasOWE = authSuites.contains('OWE');
-    final hasEAP = authSuites.contains('EAP') || authSuites.contains('802.1X');
+    final hasSAE = _hasSuite('sae');
+    final hasPSK = _hasSuite('psk');
+    final hasOWE = _hasSuite('owe');
+    final hasEAP = _hasSuite('eap') || _hasSuite('802.1x');
     // OWE: opportunistic wireless encryption
     if (hasOWE) return 'owe';
     // Enterprise: we cannot map to a PSK mode — return a sentinel so callers
@@ -243,12 +246,17 @@ class WifiEncryption {
   }
 
   /// Whether this encryption type requires a password.
-  bool get requiresPassword => enabled && !authSuites.contains('OWE');
+  bool get requiresPassword => enabled && !_hasSuite('owe');
 
   /// Whether this encryption type requires enterprise (EAP) credentials
   /// that the app cannot configure.
   bool get isEnterprise {
-    final hasEAP = authSuites.contains('EAP') || authSuites.contains('802.1X');
-    return hasEAP && !authSuites.contains('SAE') && !authSuites.contains('PSK');
+    final hasEAP = _hasSuite('eap') || _hasSuite('802.1x');
+    return hasEAP && !_hasSuite('sae') && !_hasSuite('psk');
   }
+
+  /// rpcd sends suites in lower case (`psk`, `sae`, `802.1x`); fixtures and
+  /// other sources use upper case.
+  bool _hasSuite(String suite) =>
+      authSuites.any((s) => s.toLowerCase() == suite);
 }
