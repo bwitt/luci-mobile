@@ -92,6 +92,21 @@ abstract class IApiService {
     BuildContext? context,
   });
 
+  /// Runs [command] through cgi-io's `/cgi-bin/cgi-exec`, as LuCI's
+  /// `fs.exec_direct` does, and returns its stdout.
+  ///
+  /// The ACL check is the same as `file.exec`'s, but the output is streamed
+  /// rather than capped at rpcd's 256 KiB. Refusals and missing commands
+  /// throw `RpcException`s with the ubus status `file.exec` would give.
+  Future<String> execDirect(
+    String ipAddress,
+    String sysauth,
+    bool useHttps, {
+    required String command,
+    List<String> params = const [],
+    BuildContext? context,
+  });
+
   /// Scans for nearby wireless networks using a given radio device (e.g., wlan0).
   /// Returns the raw scan results from iwinfo.scan.
   Future<List<Map<String, dynamic>>> scanWirelessNetworks({

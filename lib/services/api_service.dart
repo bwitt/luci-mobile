@@ -314,6 +314,19 @@ String userFacingApiError(Object error) {
   return error.toString().replaceFirst('Exception: ', '');
 }
 
+/// The form body of a cgi-exec request, escaped as LuCI's `fs.exec_direct`
+/// escapes it: cgi-io splits the command line on unescaped whitespace.
+@visibleForTesting
+String cgiExecBody(String sessionId, String command, List<String> params) {
+  String escape(String arg) => arg
+      .replaceAll(r'\', r'\\')
+      .replaceAllMapped(RegExp(r'\s'), (m) => '\\${m[0]}');
+  final commandLine = [command, ...params].map(escape).join(' ');
+  return 'sessionid=${Uri.encodeComponent(sessionId)}'
+      '&command=${Uri.encodeComponent(commandLine)}'
+      '&stderr=0';
+}
+
 Uri _buildUrl(String ipAddress, bool useHttps, String path) {
   final scheme = useHttps ? 'https' : 'http';
   // Handle cases where ipAddress might already include a scheme
@@ -1088,6 +1101,51 @@ class RealApiService implements IApiService {
       );
     }
     return result;
+  }
+
+  @override
+  Future<String> execDirect(
+    String ipAddress,
+    String sysauth,
+    bool useHttps, {
+    required String command,
+    List<String> params = const [],
+    BuildContext? context,
+  }) async {
+    final url = _buildUrl(ipAddress, useHttps, '/cgi-bin/cgi-exec');
+    final client = _createHttpClient(useHttps, ipAddress, context: context);
+    try {
+      final response = await client.post<List<int>>(
+        url.toString(),
+        data: cgiExecBody(sysauth, command, params),
+        options: Options(
+          contentType: Headers.formUrlEncodedContentType,
+          responseType: ResponseType.bytes,
+          extra: {rpcCallExtra: 'cgi-exec $command'},
+          validateStatus: (_) => true,
+        ),
+      );
+      final status = response.statusCode;
+      if (status == 200) {
+        return utf8.decode(response.data ?? const [], allowMalformed: true);
+      }
+      throw RpcException(
+        object: 'file',
+        method: 'exec',
+        // The ubus statuses `file.exec` answers with, so callers can treat
+        // both transports alike. uhttpd also answers 404 without cgi-io.
+        status: switch (status) {
+          400 => 2,
+          403 => 6,
+          404 => 4,
+          _ => null,
+        },
+        detail: 'cgi-exec returned HTTP $status',
+      );
+    } on DioException catch (e, stack) {
+      Logger.exception('cgi-exec of $command failed', e, stack);
+      rethrow;
+    }
   }
 
   CancelToken? _scanCancelToken;

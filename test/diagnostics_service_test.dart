@@ -38,11 +38,32 @@ class _ExecApi extends MockApiService {
 /// Answers `file.exec` per command line, the way rpcd's ACL check does:
 /// a command line it has no answer for is refused.
 class _AclApi extends MockApiService {
-  _AclApi(this.replies);
+  _AclApi(this.replies, {this.direct = const {}});
 
   /// `command arg arg` -> reply, or an RpcException to throw.
   final Map<String, Object> replies;
   final List<String> asked = [];
+
+  /// The same for cgi-exec: stdout, or an RpcException to throw. A command
+  /// line missing here gets uhttpd's answer on a router without cgi-io.
+  final Map<String, Object> direct;
+  final List<String> askedDirect = [];
+
+  @override
+  Future<String> execDirect(
+    String ipAddress,
+    String sysauth,
+    bool useHttps, {
+    required String command,
+    List<String> params = const [],
+    BuildContext? context,
+  }) async {
+    final line = [command, ...params].join(' ');
+    askedDirect.add(line);
+    final reply = direct[line] ?? _notFound;
+    if (reply is RpcException) throw reply;
+    return reply as String;
+  }
 
   @override
   Future<dynamic> call(
@@ -155,6 +176,100 @@ void main() {
           DiagnosticsService(api).systemLog(_session),
           throwsA(isA<RpcException>().having((e) => e.status, 'status', 8)),
         );
+      });
+
+      // #96: cgi-exec streams the output, so the whole log arrives.
+      group('is read through cgi-exec', () {
+        // Well over rpcd's 256 KiB.
+        final huge = [
+          for (var i = 1; i <= 5000; i++)
+            'Sun Sep 20 08:53:53 2026 daemon.info app[1]: line $i '
+                '${'x' * 60}',
+        ].join('\n');
+
+        setUpAll(() => expect(huge.length, greaterThan(256 * 1024)));
+
+        test('system log, trimmed to the last lines', () async {
+          final api = _AclApi(
+            {'/usr/libexec/syslog-wrapper': tooLarge},
+            direct: {'/usr/libexec/syslog-wrapper': huge},
+          );
+
+          final result = await DiagnosticsService(api)
+              .systemLog(_session, lines: 200);
+
+          final lines = result.output.split('\n');
+          expect(lines, hasLength(200));
+          expect(lines.first, contains('line 4801 '));
+          expect(lines.last, contains('line 5000 '));
+          expect(api.askedDirect, ['/usr/libexec/syslog-wrapper']);
+          // Read whole: none of the older or bounded forms were needed.
+          expect(api.asked, ['/usr/libexec/syslog-wrapper']);
+        });
+
+        test('kernel log', () async {
+          final api = _AclApi(
+            {'/bin/dmesg -r': tooLarge},
+            direct: {'/bin/dmesg -r': '<6>[    0.000000] Booting Linux\n'},
+          );
+
+          final result = await DiagnosticsService(api).kernelLog(_session);
+
+          expect(result.output, contains('Booting Linux'));
+          expect(api.askedDirect, ['/bin/dmesg -r']);
+        });
+
+        test('only after file.exec found it too large', () async {
+          final api = _AclApi({
+            '/usr/libexec/syslog-wrapper': _stdout('small\n'),
+            '/bin/dmesg -r': _stdout('<6>[ 1.0] small\n'),
+          });
+          final service = DiagnosticsService(api);
+
+          await service.systemLog(_session);
+          await service.kernelLog(_session);
+
+          expect(api.askedDirect, isEmpty);
+        });
+
+        // Without cgi-io, or without its grant, nothing changes.
+        test('falling back as before when cgi-exec fails', () async {
+          final api = _AclApi(
+            {
+              '/usr/libexec/syslog-wrapper': tooLarge,
+              '/sbin/logread -l 200': _stdout('recent\n'),
+              '/bin/dmesg -r': tooLarge,
+            },
+            direct: {
+              '/usr/libexec/syslog-wrapper': const RpcException(
+                object: 'file',
+                method: 'exec',
+                status: 6,
+              ),
+            },
+          );
+          final service = DiagnosticsService(api);
+
+          expect((await service.systemLog(_session)).output, 'recent');
+          await expectLater(
+            service.kernelLog(_session),
+            throwsA(isA<RpcException>().having((e) => e.status, 'status', 8)),
+          );
+        });
+
+        // It printed over 256 KiB a moment ago; empty is a failed read, not
+        // an empty log.
+        test('an empty answer is not an empty log', () async {
+          final api = _AclApi(
+            {'/usr/libexec/syslog-wrapper': tooLarge},
+            direct: {'/usr/libexec/syslog-wrapper': ''},
+          );
+
+          await expectLater(
+            DiagnosticsService(api).systemLog(_session),
+            throwsA(isA<RpcException>().having((e) => e.status, 'status', 8)),
+          );
+        });
       });
     });
 

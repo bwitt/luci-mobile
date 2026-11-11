@@ -1142,6 +1142,27 @@ class MockApiService implements IApiService {
   }
 
   @override
+  Future<String> execDirect(
+    String ipAddress,
+    String sysauth,
+    bool useHttps, {
+    required String command,
+    List<String> params = const [],
+    BuildContext? context,
+  }) async {
+    final result = await call(
+      ipAddress,
+      sysauth,
+      useHttps,
+      object: 'file',
+      method: 'exec',
+      params: {'command': command, 'params': params},
+    );
+    final data = result is List && result.length > 1 ? result[1] : null;
+    return data is Map ? data['stdout']?.toString() ?? '' : '';
+  }
+
+  @override
   Future<Map<String, Set<String>>> fetchAllAssociatedWirelessMacsWithContext({
     required String ipAddress,
     required String sysauth,

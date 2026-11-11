@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:luci_mobile/services/api_service.dart';
 import 'package:luci_mobile/services/interfaces/api_service_interface.dart';
 import 'package:luci_mobile/state/router_session.dart';
+import 'package:luci_mobile/utils/logger.dart';
 
 /// A network tool the router can run on the user's behalf.
 enum DiagnosticTool {
@@ -89,7 +90,14 @@ class DiagnosticsService {
   /// Reads the kernel ring buffer.
   Future<DiagnosticResult> kernelLog(RouterSession session) async {
     final (command, params) = kernelLogCommand;
-    return _requireLog(await _exec(session, command, params));
+    try {
+      return _requireLog(await _exec(session, command, params));
+    } on RpcException catch (e) {
+      if (e.status != _ubusNotSupported) rethrow;
+      final whole = await _execUncapped(session, command, params);
+      if (whole == null) rethrow;
+      return whole;
+    }
   }
 
   /// [result], unless it is a failed run that printed nothing.
@@ -145,11 +153,20 @@ class DiagnosticsService {
           stderr: result.stderr,
         );
       } on RpcException catch (e) {
+        final isTooLarge = e.status == _ubusNotSupported;
+        if (isTooLarge) {
+          final whole = await _execUncapped(session, command, params);
+          if (whole != null) {
+            return DiagnosticResult(
+              output: lastLines(whole.output, lines),
+              exitCode: whole.exitCode,
+            );
+          }
+        }
         // Not installed on this release (4), not the form this release's
         // ACL grants (6), or more output than rpcd returns in one reply (8,
-        // 256 KiB - a large `log_file`): try the next one. Anything else is
-        // a real failure.
-        final isTooLarge = e.status == _ubusNotSupported;
+        // 256 KiB - a large `log_file`) that cgi-exec could not read either:
+        // try the next one. Anything else is a real failure.
         if (!e.isNotFound && !e.isAccessDenied && !isTooLarge) rethrow;
         last = e;
         if (isTooLarge) tooLarge ??= e;
@@ -164,6 +181,30 @@ class DiagnosticsService {
 
   /// What rpcd answers when a command prints more than it will return.
   static const _ubusNotSupported = 8;
+
+  /// [command] read through cgi-exec, which streams its output with no size
+  /// cap, or null when that failed too (no cgi-io, or no `cgi-io` grant).
+  Future<DiagnosticResult?> _execUncapped(
+    RouterSession session,
+    String command,
+    List<String> params,
+  ) async {
+    try {
+      final output = await _api.execDirect(
+        session.ipAddress,
+        session.sysauth,
+        session.useHttps,
+        command: command,
+        params: params,
+      );
+      // It printed over 256 KiB a moment ago: nothing now is a failed read.
+      if (output.trim().isEmpty) return null;
+      return DiagnosticResult(output: output, exitCode: 0);
+    } catch (e) {
+      Logger.warning('cgi-exec could not read $command: $e');
+      return null;
+    }
+  }
 
   /// The last [count] non-empty lines of [output].
   @visibleForTesting
