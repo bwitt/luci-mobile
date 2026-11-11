@@ -537,5 +537,10 @@
   "targetPlatform": "Platforma docelowa",
   "kernelVersion": "Wersja jądra",
   "systemDetails": "Szczegóły systemu",
-  "allowedIps": "Dozwolone IP"
+  "allowedIps": "Dozwolone IP",
+  "shareWifiQr": "Udostępnij kodem QR",
+  "shareWifiTitle": "Udostępnij Wi-Fi",
+  "shareWifiScanHint": "Zeskanuj aparatem telefonu, aby połączyć się z tą siecią.",
+  "shareWifiEnterprise": "Sieci firmowe (802.1X) logują się kontem, a nie hasłem, więc nie można ich udostępnić kodem QR.",
+  "shareWifiNoPassword": "Router nie zwrócił hasła tej sieci, więc nie można jej udostępnić."
 }

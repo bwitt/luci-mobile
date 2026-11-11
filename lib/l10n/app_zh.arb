@@ -537,5 +537,10 @@
   "targetPlatform": "目标平台",
   "kernelVersion": "内核版本",
   "systemDetails": "系统详情",
-  "allowedIps": "允许的 IP"
+  "allowedIps": "允许的 IP",
+  "shareWifiQr": "通过二维码分享",
+  "shareWifiTitle": "分享 Wi-Fi",
+  "shareWifiScanHint": "用手机相机扫描即可加入此网络。",
+  "shareWifiEnterprise": "企业级 (802.1X) 网络使用账户而非密码登录，因此无法通过二维码分享。",
+  "shareWifiNoPassword": "路由器未返回此网络的密码，因此无法分享。"
 }

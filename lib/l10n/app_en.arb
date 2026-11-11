@@ -891,5 +891,10 @@
   "targetPlatform": "Target platform",
   "kernelVersion": "Kernel version",
   "systemDetails": "System details",
-  "allowedIps": "Allowed IPs"
+  "allowedIps": "Allowed IPs",
+  "shareWifiQr": "Share via QR code",
+  "shareWifiTitle": "Share Wi-Fi",
+  "shareWifiScanHint": "Scan with a phone camera to join this network.",
+  "shareWifiEnterprise": "Enterprise (802.1X) networks sign in with an account, not a password, so they can't be shared as a QR code.",
+  "shareWifiNoPassword": "The router didn't return this network's password, so it can't be shared."
 }

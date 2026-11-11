@@ -537,5 +537,10 @@
   "targetPlatform": "Cieľová platforma",
   "kernelVersion": "Verzia jadra",
   "systemDetails": "Podrobnosti o systéme",
-  "allowedIps": "Povolené IP"
+  "allowedIps": "Povolené IP",
+  "shareWifiQr": "Zdieľať QR kódom",
+  "shareWifiTitle": "Zdieľať Wi-Fi",
+  "shareWifiScanHint": "Naskenujte fotoaparátom telefónu a pripojte sa k tejto sieti.",
+  "shareWifiEnterprise": "Podnikové siete (802.1X) sa prihlasujú účtom, nie heslom, a preto ich nemožno zdieľať QR kódom.",
+  "shareWifiNoPassword": "Router nevrátil heslo tejto siete, takže ju nemožno zdieľať."
 }

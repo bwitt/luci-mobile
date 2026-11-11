@@ -537,5 +537,10 @@
   "targetPlatform": "대상 플랫폼",
   "kernelVersion": "커널 버전",
   "systemDetails": "시스템 세부 정보",
-  "allowedIps": "허용된 IP"
+  "allowedIps": "허용된 IP",
+  "shareWifiQr": "QR 코드로 공유",
+  "shareWifiTitle": "Wi-Fi 공유",
+  "shareWifiScanHint": "휴대폰 카메라로 스캔하면 이 네트워크에 연결됩니다.",
+  "shareWifiEnterprise": "엔터프라이즈(802.1X) 네트워크는 비밀번호가 아닌 계정으로 로그인하므로 QR 코드로 공유할 수 없습니다.",
+  "shareWifiNoPassword": "라우터가 이 네트워크의 비밀번호를 반환하지 않아 공유할 수 없습니다."
 }

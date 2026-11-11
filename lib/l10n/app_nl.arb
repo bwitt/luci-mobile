@@ -537,5 +537,10 @@
   "targetPlatform": "Doelplatform",
   "kernelVersion": "Kernelversie",
   "systemDetails": "Systeemdetails",
-  "allowedIps": "Toegestane IP's"
+  "allowedIps": "Toegestane IP's",
+  "shareWifiQr": "Delen via QR-code",
+  "shareWifiTitle": "Wifi delen",
+  "shareWifiScanHint": "Scan met een telefooncamera om verbinding te maken met dit netwerk.",
+  "shareWifiEnterprise": "Enterprise-netwerken (802.1X) melden zich aan met een account, niet met een wachtwoord, en kunnen daarom niet via een QR-code worden gedeeld.",
+  "shareWifiNoPassword": "De router heeft het wachtwoord van dit netwerk niet teruggegeven, dus het kan niet worden gedeeld."
 }

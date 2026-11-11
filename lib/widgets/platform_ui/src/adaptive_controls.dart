@@ -49,6 +49,7 @@ IconData? cupertinoIconForSFSymbol(String symbol) => switch (symbol) {
   'photo.on.rectangle' => CupertinoIcons.photo_on_rectangle,
   'paperplane.fill' => CupertinoIcons.arrow_up_circle_fill,
   'eye' => CupertinoIcons.eye,
+  'qrcode' => Icons.qr_code_2,
   'hand.tap' => Icons.touch_app_outlined,
   'arrow.up.left.and.arrow.down.right' =>
     CupertinoIcons.arrow_up_left_arrow_down_right,

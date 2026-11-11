@@ -8,6 +8,8 @@ import 'package:luci_mobile/main.dart';
 import 'package:luci_mobile/models/glinet_data.dart';
 import 'package:luci_mobile/models/interface.dart';
 import 'package:luci_mobile/utils/wifi_utils.dart';
+import 'package:luci_mobile/utils/wifi_qr.dart';
+import 'package:luci_mobile/widgets/wifi_qr_sheet.dart';
 import 'package:luci_mobile/widgets/luci_app_bar.dart';
 import 'package:luci_mobile/design/luci_design_system.dart';
 import 'package:luci_mobile/widgets/luci_loading_states.dart';
@@ -712,6 +714,7 @@ class _InterfacesScreenState extends ConsumerState<InterfacesScreen> {
               'mode': mode,
               'encryption': _uciString(config['encryption']),
               'encryptionDescription': encDescription,
+              'uciConfig': uciInterfaces[uciName] ?? config,
               'network': (config['network'] is List)
                   ? (config['network'] as List).join(', ')
                   : config['network']?.toString() ?? '',
@@ -765,6 +768,7 @@ class _InterfacesScreenState extends ConsumerState<InterfacesScreen> {
           'mode': mode,
           'encryption': _uciString(config['encryption']),
           'encryptionDescription': _uciString(config['encryption'], 'N/A'),
+          'uciConfig': config,
           'network': (config['network'] is List)
               ? (config['network'] as List).join(', ')
               : config['network']?.toString() ?? '',
@@ -883,6 +887,19 @@ class _InterfacesScreenState extends ConsumerState<InterfacesScreen> {
     final isIfaceEnabled = iface['isIfaceEnabled'] as bool? ?? true;
     final mode = iface['mode']?.toString() ?? '';
     final encDescription = iface['encryptionDescription']?.toString() ?? '';
+    final uciConfig = iface['uciConfig'];
+    final canShare =
+        uciConfig is Map &&
+        _uciString(uciConfig['ssid']).isNotEmpty &&
+        !const {'mesh', 'monitor'}.contains(mode.toLowerCase());
+    final qrNetwork = canShare ? WifiQrNetwork.fromUci(uciConfig) : null;
+    final shareBlockedReason = !canShare
+        ? null
+        : qrNetwork == null
+        ? context.l10n.shareWifiEnterprise
+        : !qrNetwork.hasPassword
+        ? context.l10n.shareWifiNoPassword
+        : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -956,6 +973,36 @@ class _InterfacesScreenState extends ConsumerState<InterfacesScreen> {
                   ],
                 ),
 
+                if (canShare) ...[
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: AdaptiveButton(
+                      onPressed: qrNetwork != null && shareBlockedReason == null
+                          ? () => _showWifiQrSheet(context, qrNetwork)
+                          : null,
+                      label: context.l10n.shareWifiQr,
+                      sfSymbol: const SFSymbol('qrcode', size: 18),
+                      color: colorScheme.primary,
+                      style: AdaptiveButtonStyle.bordered,
+                      borderRadius: BorderRadius.circular(10),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      useSmoothRectangleBorder: false,
+                    ),
+                  ),
+                  if (shareBlockedReason != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        shareBlockedReason,
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                ],
+
                 const SizedBox(height: 4),
 
                 // Mode label
@@ -1004,6 +1051,16 @@ class _InterfacesScreenState extends ConsumerState<InterfacesScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) => _WifiEditBottomSheet(iface: iface),
+    );
+  }
+
+  void _showWifiQrSheet(BuildContext context, WifiQrNetwork network) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (ctx) => WifiQrSheet(network: network),
     );
   }
 

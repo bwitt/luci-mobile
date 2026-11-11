@@ -537,5 +537,10 @@
   "targetPlatform": "Plataforma de destino",
   "kernelVersion": "Versión del kernel",
   "systemDetails": "Detalles del sistema",
-  "allowedIps": "IP permitidas"
+  "allowedIps": "IP permitidas",
+  "shareWifiQr": "Compartir con código QR",
+  "shareWifiTitle": "Compartir Wi-Fi",
+  "shareWifiScanHint": "Escanea con la cámara de un teléfono para unirte a esta red.",
+  "shareWifiEnterprise": "Las redes empresariales (802.1X) inician sesión con una cuenta, no con una contraseña, por lo que no se pueden compartir con un código QR.",
+  "shareWifiNoPassword": "El router no devolvió la contraseña de esta red, así que no se puede compartir."
 }

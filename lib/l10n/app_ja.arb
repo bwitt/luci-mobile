@@ -537,5 +537,10 @@
   "targetPlatform": "ターゲットプラットフォーム",
   "kernelVersion": "カーネルバージョン",
   "systemDetails": "システムの詳細",
-  "allowedIps": "許可された IP"
+  "allowedIps": "許可された IP",
+  "shareWifiQr": "QR コードで共有",
+  "shareWifiTitle": "Wi-Fi を共有",
+  "shareWifiScanHint": "スマートフォンのカメラでスキャンすると、このネットワークに接続できます。",
+  "shareWifiEnterprise": "エンタープライズ (802.1X) ネットワークはパスワードではなくアカウントでサインインするため、QR コードで共有できません。",
+  "shareWifiNoPassword": "ルーターがこのネットワークのパスワードを返さなかったため、共有できません。"
 }

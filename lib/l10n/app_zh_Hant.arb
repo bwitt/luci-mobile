@@ -537,5 +537,10 @@
   "targetPlatform": "目標平台",
   "kernelVersion": "核心版本",
   "systemDetails": "系統詳情",
-  "allowedIps": "允許的 IP"
+  "allowedIps": "允許的 IP",
+  "shareWifiQr": "透過 QR 碼分享",
+  "shareWifiTitle": "分享 Wi-Fi",
+  "shareWifiScanHint": "用手機相機掃描即可加入此網路。",
+  "shareWifiEnterprise": "企業級 (802.1X) 網路使用帳戶而非密碼登入，因此無法透過 QR 碼分享。",
+  "shareWifiNoPassword": "路由器未傳回此網路的密碼，因此無法分享。"
 }

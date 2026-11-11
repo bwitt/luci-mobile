@@ -537,5 +537,10 @@
   "targetPlatform": "Plateforme cible",
   "kernelVersion": "Version du noyau",
   "systemDetails": "Détails du système",
-  "allowedIps": "IP autorisées"
+  "allowedIps": "IP autorisées",
+  "shareWifiQr": "Partager par QR code",
+  "shareWifiTitle": "Partager le Wi-Fi",
+  "shareWifiScanHint": "Scannez avec l'appareil photo d'un téléphone pour rejoindre ce réseau.",
+  "shareWifiEnterprise": "Les réseaux Entreprise (802.1X) se connectent avec un compte et non un mot de passe ; ils ne peuvent donc pas être partagés par QR code.",
+  "shareWifiNoPassword": "Le routeur n'a pas renvoyé le mot de passe de ce réseau ; il ne peut donc pas être partagé."
 }

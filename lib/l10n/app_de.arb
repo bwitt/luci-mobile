@@ -537,5 +537,10 @@
   "targetPlatform": "Zielplattform",
   "kernelVersion": "Kernel-Version",
   "systemDetails": "Systemdetails",
-  "allowedIps": "Erlaubte IPs"
+  "allowedIps": "Erlaubte IPs",
+  "shareWifiQr": "Per QR-Code teilen",
+  "shareWifiTitle": "WLAN teilen",
+  "shareWifiScanHint": "Mit der Handykamera scannen, um diesem Netzwerk beizutreten.",
+  "shareWifiEnterprise": "Enterprise-Netzwerke (802.1X) melden sich mit einem Konto statt einem Passwort an und können daher nicht per QR-Code geteilt werden.",
+  "shareWifiNoPassword": "Der Router hat das Passwort dieses Netzwerks nicht übermittelt, daher kann es nicht geteilt werden."
 }
