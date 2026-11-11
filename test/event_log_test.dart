@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -22,6 +23,17 @@ class _MemoryStorage implements SecureStorageService {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// Holds every write until [release] completes.
+class _SlowStorage extends _MemoryStorage {
+  final release = Completer<void>();
+
+  @override
+  Future<void> writeValue(String key, String value) async {
+    await release.future;
+    values[key] = value;
+  }
 }
 
 final _at = DateTime.utc(2026, 9, 20, 12);
@@ -560,6 +572,22 @@ void main() {
       ], fromBackground: true);
 
       await log.clear('r1');
+
+      expect(storage.values, isEmpty);
+      expect(await log.load('r1'), isEmpty);
+    });
+
+    // An append still writing when the user clears must not bring the
+    // cleared feed back.
+    test('clearing waits for an append in flight', () async {
+      final storage = _SlowStorage();
+      final log = EventLog(storage);
+
+      final append = log.append('r1', [event(RouterEventKind.wanDown, 1)]);
+      final clear = log.clear('r1');
+      await pumpEventQueue();
+      storage.release.complete();
+      await Future.wait([append, clear]);
 
       expect(storage.values, isEmpty);
       expect(await log.load('r1'), isEmpty);

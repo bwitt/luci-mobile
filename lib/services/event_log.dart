@@ -396,7 +396,14 @@ class EventLog {
     );
   }
 
-  Future<void> clear(String routerId) async {
+  Future<void> clear(String routerId) {
+    // Queued behind any append, which would otherwise write the feed back.
+    final queued = _writes.then((_) => _clear(routerId));
+    _writes = queued.then((_) {}, onError: (_) {});
+    return queued;
+  }
+
+  Future<void> _clear(String routerId) async {
     // Each on its own: a failure on one must not leave the other to bring
     // the cleared feed back on the next load.
     for (final key in [storageKey(routerId), backgroundKey(routerId)]) {
