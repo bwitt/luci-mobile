@@ -147,6 +147,7 @@ class _InterfacesScreenState extends ConsumerState<InterfacesScreen> {
   void dispose() {
     // Clear target interface when widget is disposed
     _targetInterface = null;
+    _scrollController.dispose();
     super.dispose();
   }
 
