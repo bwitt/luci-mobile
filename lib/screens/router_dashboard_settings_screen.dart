@@ -180,35 +180,41 @@ class _RouterDashboardSettingsScreenState
                 .withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Column(
-            children: [
-              AdaptiveSwitchListTile(
-                title: Text(
-                  context.l10n.showAllInterfaces,
-                  style: LuciTextStyles.detailValue(context)
-                      .copyWith(fontWeight: FontWeight.w600),
+          // The tile's ink paints on the nearest Material, above this colour.
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                AdaptiveSwitchListTile(
+                  title: Text(
+                    context.l10n.showAllInterfaces,
+                    style: LuciTextStyles.detailValue(context)
+                        .copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  value: _preferences.showAllThroughput,
+                  onChanged: (value) {
+                    setState(() {
+                      if (value) {
+                        _preferences = _preferences.copyWith(
+                          showAllThroughput: true,
+                          primaryThroughputInterface: null,
+                        );
+                      } else {
+                        _preferences = _preferences.copyWith(
+                          showAllThroughput: false,
+                          primaryThroughputInterface: interfaces.isNotEmpty
+                              ? interfaces.first
+                              : null,
+                        );
+                      }
+                    });
+                    _onPreferenceChanged();
+                  },
                 ),
-                value: _preferences.showAllThroughput,
-                onChanged: (value) {
-                  setState(() {
-                    if (value) {
-                      _preferences = _preferences.copyWith(
-                        showAllThroughput: true,
-                        primaryThroughputInterface: null,
-                      );
-                    } else {
-                      _preferences = _preferences.copyWith(
-                        showAllThroughput: false,
-                        primaryThroughputInterface: interfaces.isNotEmpty
-                            ? interfaces.first
-                            : null,
-                      );
-                    }
-                  });
-                  _onPreferenceChanged();
-                },
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         if (!_preferences.showAllThroughput && interfaces.isNotEmpty) ...[
@@ -266,33 +272,39 @@ class _RouterDashboardSettingsScreenState
                 .withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Column(
-            children: [
-              AdaptiveSwitchListTile(
-                title: Text(
-                  context.l10n.showAllNetworks,
-                  style: LuciTextStyles.detailValue(context)
-                      .copyWith(fontWeight: FontWeight.w600),
+          // The tile's ink paints on the nearest Material, above this colour.
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                AdaptiveSwitchListTile(
+                  title: Text(
+                    context.l10n.showAllNetworks,
+                    style: LuciTextStyles.detailValue(context)
+                        .copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  value: _preferences.enabledWirelessInterfaces.isEmpty,
+                  onChanged: (value) {
+                    setState(() {
+                      if (value) {
+                        _preferences = _preferences.copyWith(
+                          enabledWirelessInterfaces: {},
+                        );
+                      } else {
+                        _preferences = _preferences.copyWith(
+                          enabledWirelessInterfaces: Set.from(
+                            _availableWirelessInterfaces,
+                          ),
+                        );
+                      }
+                    });
+                    _onPreferenceChanged();
+                  },
                 ),
-                value: _preferences.enabledWirelessInterfaces.isEmpty,
-                onChanged: (value) {
-                  setState(() {
-                    if (value) {
-                      _preferences = _preferences.copyWith(
-                        enabledWirelessInterfaces: {},
-                      );
-                    } else {
-                      _preferences = _preferences.copyWith(
-                        enabledWirelessInterfaces: Set.from(
-                          _availableWirelessInterfaces,
-                        ),
-                      );
-                    }
-                  });
-                  _onPreferenceChanged();
-                },
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         if (_preferences.enabledWirelessInterfaces.isNotEmpty) ...[
@@ -358,33 +370,39 @@ class _RouterDashboardSettingsScreenState
                 .withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Column(
-            children: [
-              AdaptiveSwitchListTile(
-                title: Text(
-                  context.l10n.showAllInterfaces,
-                  style: LuciTextStyles.detailValue(context)
-                      .copyWith(fontWeight: FontWeight.w600),
+          // The tile's ink paints on the nearest Material, above this colour.
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                AdaptiveSwitchListTile(
+                  title: Text(
+                    context.l10n.showAllInterfaces,
+                    style: LuciTextStyles.detailValue(context)
+                        .copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  value: _preferences.enabledWiredInterfaces.isEmpty,
+                  onChanged: (value) {
+                    setState(() {
+                      if (value) {
+                        _preferences = _preferences.copyWith(
+                          enabledWiredInterfaces: {},
+                        );
+                      } else {
+                        _preferences = _preferences.copyWith(
+                          enabledWiredInterfaces: Set.from(
+                            _availableWiredInterfaces,
+                          ),
+                        );
+                      }
+                    });
+                    _onPreferenceChanged();
+                  },
                 ),
-                value: _preferences.enabledWiredInterfaces.isEmpty,
-                onChanged: (value) {
-                  setState(() {
-                    if (value) {
-                      _preferences = _preferences.copyWith(
-                        enabledWiredInterfaces: {},
-                      );
-                    } else {
-                      _preferences = _preferences.copyWith(
-                        enabledWiredInterfaces: Set.from(
-                          _availableWiredInterfaces,
-                        ),
-                      );
-                    }
-                  });
-                  _onPreferenceChanged();
-                },
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         if (_preferences.enabledWiredInterfaces.isNotEmpty) ...[
