@@ -116,19 +116,31 @@ class RouterService {
     }
   }
 
+  /// An unused id: '$ip-$user', suffixed when taken. Ids never change.
+  String newRouterId(String ip, String user) {
+    final base = '$ip-$user';
+    var id = base;
+    for (var n = 2; _routers.any((r) => r.id == id); n++) {
+      id = '$base-$n';
+    }
+    return id;
+  }
+
   model.Router createRouter(
     String ip,
     String user,
     String pass,
-    bool useHttps,
-  ) {
-    final id = '$ip-$user';
+    bool useHttps, {
+    String? id,
+    String? name,
+  }) {
     return model.Router(
-      id: id,
+      id: id ?? '$ip-$user',
       ipAddress: ip,
       username: user,
       password: pass,
       useHttps: useHttps,
+      name: name,
     );
   }
 }

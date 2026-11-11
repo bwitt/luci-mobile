@@ -667,6 +667,8 @@ class AppState extends ChangeNotifier {
     String? alternateAddress,
     bool? alternateUseHttps,
     int activeAddressIndex = 0,
+    String? name,
+    bool asNewRouter = false,
     BuildContext? context,
   }) async {
     // A fresh login starts a new session; discard stale results from the
@@ -720,11 +722,26 @@ class AppState extends ChangeNotifier {
             final primaryUseHttps = result.usedAddressIndex == 0
                 ? actualUseHttps
                 : useHttps;
+            // Otherwise update the saved one, preferring the selected router.
+            final selected = _routerService!.selectedRouter;
+            final existing = asNewRouter
+                ? null
+                : selected != null &&
+                      selected.ipAddress == ip &&
+                      selected.username == user
+                ? selected
+                : _routerService!.routers
+                      .where((r) => r.id == '$ip-$user')
+                      .firstOrNull;
             final router = _routerService!.createRouter(
               ip,
               user,
               pass,
               primaryUseHttps,
+              id: asNewRouter
+                  ? _routerService!.newRouterId(ip, user)
+                  : existing?.id,
+              name: existing?.name ?? name,
             );
             // Preserve alternate address in the new router
             final routerWithAlternate = router.copyWith(
@@ -734,10 +751,7 @@ class AppState extends ChangeNotifier {
                   : alternateUseHttps,
               activeAddressIndex: result.usedAddressIndex,
             );
-            final idx = _routerService!.routers.indexWhere(
-              (r) => r.id == routerWithAlternate.id,
-            );
-            if (idx == -1) {
+            if (existing == null) {
               await addRouter(routerWithAlternate);
             } else {
               await updateRouter(routerWithAlternate);
@@ -3263,7 +3277,7 @@ class AppState extends ChangeNotifier {
     final router = _routerService?.selectedRouter;
     final id = router?.id ?? currentSession?.routerId;
     if (id == null) return clients;
-    final label = router?.lastKnownHostname ?? router?.activeAddress;
+    final label = router?.displayName(address: router.activeAddress);
     return [
       for (final c in clients) c.copyWith(routerId: id, routerLabel: label),
     ];
@@ -3745,7 +3759,7 @@ class AppState extends ChangeNotifier {
                     (lease) => <String, dynamic>{
                       ...lease,
                       '_routerId': r.id,
-                      '_routerLabel': r.lastKnownHostname ?? r.activeAddress,
+                      '_routerLabel': r.displayName(address: r.activeAddress),
                       ...presence.annotate(lease),
                     },
                   )

@@ -50,9 +50,7 @@ class DashboardSettingsListScreen extends ConsumerWidget {
               ),
               itemBuilder: (context, index) {
                 final r = routers[index];
-                final title = r.lastKnownHostname?.isNotEmpty == true
-                    ? r.lastKnownHostname!
-                    : r.ipAddress;
+                final title = r.displayName();
                 return Card(
                   elevation: 2,
                   shape: RoundedRectangleBorder(

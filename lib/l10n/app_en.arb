@@ -293,7 +293,11 @@
   },
   "addRouter": "Add Router",
   "required": "Required",
-  "routerAlreadyExists": "Router already exists.",
+  "routerAlreadyExists": "Router already exists. Add it under a different nickname to keep both.",
+  "routerNickname": "Nickname (optional)",
+  "routerNicknameHelp": "Tells apart routers at the same address, e.g. Home or Office",
+  "editNickname": "Edit nickname",
+  "nicknameInUse": "Another router at this address already has this nickname.",
   "failedToConnectCredentials": "Failed to connect: Invalid credentials or host unreachable.",
   "failedToConnect": "Failed to connect: {error}",
   "@failedToConnect": {

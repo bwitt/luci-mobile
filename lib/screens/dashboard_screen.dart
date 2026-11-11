@@ -1456,9 +1456,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final boardInfo =
         appState.dashboardData?['boardInfo'] as Map<String, dynamic>?;
     final hostname = boardInfo?['hostname']?.toString();
-    final headerText = (hostname != null && hostname.isNotEmpty)
-        ? hostname
-        : (selected?.ipAddress ?? context.l10n.loading);
+    final headerText =
+        selected?.name ??
+        ((hostname != null && hostname.isNotEmpty)
+            ? hostname
+            : (selected?.ipAddress ?? context.l10n.loading));
     return Scaffold(
       appBar: LuciAppBar(
         centerTitle: true,
@@ -1543,24 +1545,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                     const Divider(height: 16),
                                     ...routers.map((r) {
                                       final isSelected = r.id == selected?.id;
-                                      String routerTitle;
-                                      bool isStale = false;
-                                      if (isSelected && boardInfo != null) {
-                                        final hostname = boardInfo['hostname']
-                                            ?.toString();
-                                        routerTitle =
-                                            (hostname != null &&
-                                                hostname.isNotEmpty)
-                                            ? hostname
-                                            : (r.lastKnownHostname ??
-                                                  r.ipAddress);
-                                      } else if (r.lastKnownHostname != null &&
-                                          r.lastKnownHostname!.isNotEmpty) {
-                                        routerTitle = r.lastKnownHostname!;
-                                        isStale = true;
-                                      } else {
-                                        routerTitle = r.ipAddress;
-                                      }
+                                      final routerTitle = r.displayName(
+                                        hostname: isSelected
+                                            ? (boardInfo?['hostname']
+                                                  ?.toString())
+                                            : null,
+                                      );
+                                      final isStale =
+                                          !(isSelected && boardInfo != null) &&
+                                          r.name == null &&
+                                          r.lastKnownHostname?.isNotEmpty ==
+                                              true;
                                       return ListTile(
                                         leading: Icon(
                                           Icons.router,

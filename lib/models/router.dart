@@ -9,6 +9,9 @@ class Router {
   final bool? alternateUseHttps;
   final int activeAddressIndex;
 
+  /// A nickname, telling apart routers that share an address and account.
+  final String? name;
+
   Router({
     required this.id,
     required this.ipAddress,
@@ -19,7 +22,22 @@ class Router {
     this.alternateAddress,
     this.alternateUseHttps,
     this.activeAddressIndex = 0,
-  });
+    String? name,
+  }) : name = name == null || name.trim().isEmpty ? null : name.trim();
+
+  /// Nickname, then live [hostname], last known hostname, then address.
+  String displayName({String? hostname, String? address}) {
+    for (final candidate in [name, hostname, lastKnownHostname]) {
+      if (candidate != null && candidate.isNotEmpty) return candidate;
+    }
+    return address ?? ipAddress;
+  }
+
+  /// Whether this is [ip] signed in to as [user] under the nickname [name].
+  bool matches(String ip, String user, String? name) =>
+      ipAddress == ip &&
+      username == user &&
+      (this.name ?? '').toLowerCase() == (name ?? '').trim().toLowerCase();
 
   /// The address currently in use (based on last successful connection).
   String get activeAddress =>
@@ -63,6 +81,7 @@ class Router {
           : json['alternateUseHttps'] == true ||
                 json['alternateUseHttps'] == 'true',
       activeAddressIndex: json['activeAddressIndex'] as int? ?? 0,
+      name: json['name'] as String?,
     );
   }
 
@@ -76,6 +95,7 @@ class Router {
     if (alternateAddress != null) 'alternateAddress': alternateAddress,
     if (alternateUseHttps != null) 'alternateUseHttps': alternateUseHttps,
     if (activeAddressIndex != 0) 'activeAddressIndex': activeAddressIndex,
+    if (name != null) 'name': name,
   };
 
   Router copyWith({
@@ -89,6 +109,7 @@ class Router {
     bool? alternateUseHttps,
     int? activeAddressIndex,
     bool clearAlternate = false,
+    String? name,
   }) {
     return Router(
       id: id ?? this.id,
@@ -106,6 +127,8 @@ class Router {
       activeAddressIndex: clearAlternate
           ? 0
           : activeAddressIndex ?? this.activeAddressIndex,
+      // An empty name clears the nickname.
+      name: name ?? this.name,
     );
   }
 }

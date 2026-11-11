@@ -9,6 +9,7 @@ import 'package:luci_mobile/widgets/luci_app_bar.dart';
 import 'package:luci_mobile/utils/url_parser.dart';
 import 'package:luci_mobile/l10n/luci_localizations.dart';
 import 'package:luci_mobile/widgets/autofill_form.dart';
+import 'package:luci_mobile/widgets/platform_ui/platform_ui.dart';
 
 class ManageRoutersScreen extends ConsumerStatefulWidget {
   const ManageRoutersScreen({super.key});
@@ -70,23 +71,13 @@ class _ManageRoutersScreenState extends ConsumerState<ManageRoutersScreen> {
                           final bool isSelected = router.id == selectedId;
                           final bool isSwitching =
                               router.id == _switchingRouterId;
-                          String routerTitle;
-                          if (isSelected && appState.dashboardData != null) {
-                            final boardInfo =
-                                appState.dashboardData?['boardInfo']
-                                    as Map<String, dynamic>?;
-                            final hostname = boardInfo?['hostname']?.toString();
-                            routerTitle =
-                                (hostname != null && hostname.isNotEmpty)
-                                ? hostname
-                                : (router.lastKnownHostname ??
-                                      router.ipAddress);
-                          } else if (router.lastKnownHostname != null &&
-                              router.lastKnownHostname!.isNotEmpty) {
-                            routerTitle = router.lastKnownHostname!;
-                          } else {
-                            routerTitle = router.ipAddress;
-                          }
+                          final boardInfo = isSelected
+                              ? (appState.dashboardData?['boardInfo']
+                                    as Map<String, dynamic>?)
+                              : null;
+                          final routerTitle = router.displayName(
+                            hostname: boardInfo?['hostname']?.toString(),
+                          );
                           return Padding(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 16.0,
@@ -143,22 +134,57 @@ class _ManageRoutersScreenState extends ConsumerState<ManageRoutersScreen> {
                                       }
                                     }
                                   : null,
-                              onDelete: () async {
-                                String routerLabel;
-                                if (isSelected &&
-                                    appState.dashboardData != null) {
-                                  final boardInfo =
-                                      appState.dashboardData?['boardInfo']
-                                          as Map<String, dynamic>?;
-                                  final hostname = boardInfo?['hostname']
-                                      ?.toString();
-                                  routerLabel =
-                                      (hostname != null && hostname.isNotEmpty)
-                                      ? hostname
-                                      : router.ipAddress;
-                                } else {
-                                  routerLabel = router.ipAddress;
+                              onEditName: () async {
+                                final name =
+                                    await AdaptiveAlertDialog.inputShow(
+                                      context: context,
+                                      title: context.l10n.editNickname,
+                                      message: context.l10n.routerNicknameHelp,
+                                      input: AdaptiveAlertDialogInput(
+                                        placeholder:
+                                            context.l10n.routerNickname,
+                                        initialValue: router.name,
+                                      ),
+                                      actions: [
+                                        AlertAction(
+                                          title: context.l10n.cancel,
+                                          style: AlertActionStyle.cancel,
+                                          onPressed: () {},
+                                        ),
+                                        AlertAction(
+                                          title: context.l10n.save,
+                                          style: AlertActionStyle.primary,
+                                          onPressed: () {},
+                                        ),
+                                      ],
+                                    );
+                                if (name == null || !context.mounted) return;
+                                if (routers.any(
+                                  (r) =>
+                                      r.id != router.id &&
+                                      r.matches(
+                                        router.ipAddress,
+                                        router.username,
+                                        name,
+                                      ),
+                                )) {
+                                  AdaptiveSnackBar.show(
+                                    context,
+                                    message: context.l10n.nicknameInUse,
+                                    type: AdaptiveSnackBarType.error,
+                                  );
+                                  return;
                                 }
+                                // An empty name clears the nickname.
+                                await appState.updateRouter(
+                                  router.copyWith(name: name),
+                                );
+                              },
+                              onDelete: () async {
+                                final routerLabel = router.displayName(
+                                  hostname: boardInfo?['hostname']?.toString(),
+                                  address: router.ipAddress,
+                                );
                                 final confirm = await showDialog<bool>(
                                   context: context,
                                   builder: (context) => AlertDialog(
@@ -241,15 +267,18 @@ class _ManageRoutersScreenState extends ConsumerState<ManageRoutersScreen> {
                                   text: 'root',
                                 );
                                 final passController = TextEditingController();
+                                final nameController = TextEditingController();
                                 final formKey = GlobalKey<FormState>();
                                 bool obscureText = true;
                                 bool isConnecting = false;
                                 bool showAlternate = false;
                                 String? errorMessage;
+                                ModalRoute<dynamic>? dialogRoute;
                                 try {
                                   await showDialog<void>(
                                     context: context,
                                     builder: (context) {
+                                      dialogRoute = ModalRoute.of(context);
                                       return StatefulBuilder(
                                         builder: (context, setState) {
                                           return AlertDialog(
@@ -486,6 +515,34 @@ class _ManageRoutersScreenState extends ConsumerState<ManageRoutersScreen> {
                                                                 .password,
                                                           ],
                                                         ),
+                                                        const SizedBox(
+                                                          height: 20,
+                                                        ),
+                                                        AdaptiveTextFormField(
+                                                          controller:
+                                                              nameController,
+                                                          textCapitalization:
+                                                              TextCapitalization
+                                                                  .words,
+                                                          decoration: InputDecoration(
+                                                            labelText: context
+                                                                .l10n
+                                                                .routerNickname,
+                                                            border:
+                                                                const OutlineInputBorder(),
+                                                            prefixIcon: const Icon(
+                                                              Icons
+                                                                  .label_outline,
+                                                            ),
+                                                            helperText: context
+                                                                .l10n
+                                                                .routerNicknameHelp,
+                                                            helperMaxLines: 2,
+                                                          ),
+                                                          placeholder: context
+                                                              .l10n
+                                                              .routerNickname,
+                                                        ),
                                                         if (errorMessage !=
                                                             null) ...[
                                                           const SizedBox(
@@ -597,13 +654,18 @@ class _ManageRoutersScreenState extends ConsumerState<ManageRoutersScreen> {
                                                                           : UrlParser.parse(
                                                                               altText,
                                                                             );
-                                                                      final id =
-                                                                          '$hostWithPort-$user';
+                                                                      final name = nameController
+                                                                          .text
+                                                                          .trim();
 
                                                                       if (routers.any(
-                                                                        (r) =>
-                                                                            r.id ==
-                                                                            id,
+                                                                        (
+                                                                          r,
+                                                                        ) => r.matches(
+                                                                          hostWithPort,
+                                                                          user,
+                                                                          name,
+                                                                        ),
                                                                       )) {
                                                                         setState(() {
                                                                           errorMessage = context
@@ -635,6 +697,10 @@ class _ManageRoutersScreenState extends ConsumerState<ManageRoutersScreen> {
                                                                               parsedAlt?.hostWithPort,
                                                                           alternateUseHttps:
                                                                               parsedAlt?.useHttps,
+                                                                          name:
+                                                                              name,
+                                                                          asNewRouter:
+                                                                              true,
                                                                           context:
                                                                               context,
                                                                         );
@@ -797,10 +863,12 @@ class _ManageRoutersScreenState extends ConsumerState<ManageRoutersScreen> {
                                 } finally {
                                   // The controllers are only used by the
                                   // dialog above; dispose them once it closes.
+                                  await dialogRoute?.completed;
                                   ipController.dispose();
                                   alternateController.dispose();
                                   userController.dispose();
                                   passController.dispose();
+                                  nameController.dispose();
                                 }
                               },
                             ),
@@ -824,6 +892,7 @@ class _UnifiedRouterCard extends StatelessWidget {
   final bool isSwitching;
   final VoidCallback? onTap;
   final VoidCallback? onRemoveFallback;
+  final VoidCallback? onEditName;
   final VoidCallback? onDelete;
 
   const _UnifiedRouterCard({
@@ -833,6 +902,7 @@ class _UnifiedRouterCard extends StatelessWidget {
     required this.isSwitching,
     this.onTap,
     this.onRemoveFallback,
+    this.onEditName,
     this.onDelete,
   });
 
@@ -957,6 +1027,16 @@ class _UnifiedRouterCard extends StatelessWidget {
                       onRemoveFallback!();
                     }
                   },
+                ),
+              if (onEditName != null)
+                AdaptiveButton.icon(
+                  onPressed: onEditName,
+                  icon: Icons.edit_outlined,
+                  iconColor: colorScheme.onSurfaceVariant,
+                  style: AdaptiveButtonStyle.plain,
+                  padding: const EdgeInsets.all(8),
+                  minSize: const Size(40, 40),
+                  semanticLabel: context.l10n.editNickname,
                 ),
               if (onDelete != null)
                 IconButton(
